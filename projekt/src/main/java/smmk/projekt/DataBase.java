@@ -113,5 +113,41 @@ public class DataBase {
                 }
             }
         
+        public Object[][] getEmployees(){
+            String sql = "SELECT COUNT(*) FROM employees";
+            String sql2 = "SELECT * FROM employees";
+            Statement stmt = null;
+            int size = 0;
+            try {
+                stmt = myConn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql);
+                while(rs.next()){
+                    size = rs.getInt(1);                
+                }
+
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            
+            Object[][] data = new Object[size][6];
+            try {
+                stmt = myConn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql2);
+                
+                for(int i=0; rs.next(); i++){
+                    data[i][0] = rs.getInt(1);
+                    data[i][1] = rs.getString(2).trim();
+                    data[i][2] = rs.getString(3).trim();
+                    data[i][3] = rs.getString(4).trim();
+                    data[i][4] = rs.getString(5).trim();
+                    data[i][5] = rs.getDouble(6);
+                    
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            
+            return data;
+        }
 
 }

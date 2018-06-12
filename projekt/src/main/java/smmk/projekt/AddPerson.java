@@ -27,14 +27,14 @@ public class AddPerson extends JPanel {
 		txtOddial = new JTextField(20);
 		
 		JLabel labZarobki = new JLabel("Zarobki: ");
-		txtOddial = new JTextField(20);
+		txtZarobki = new JTextField(20);
 		
 		add(labID); add(txtID); 
 		add(labNazwisko); add(txtNazwisko);
 		add(labImie); add(txtImie);
 		add(labEmail); add(txtEmail);
 		add(labOddzial); add(txtOddial);
-		add(labZarobki); add(txtOddial);
+		add(labZarobki); add(txtZarobki);
 	}
 
 	public String getTxtID() {

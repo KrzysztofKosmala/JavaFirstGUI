@@ -1,27 +1,19 @@
 package smmk.projekt;
 
 import java.awt.Color;
-import java.awt.Menu;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
-import java.util.Date;
-
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
-import javax.swing.SpinnerDateModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -31,16 +23,10 @@ public class GUI extends JFrame
 {
 	private DataBase database;
 	private JTabbedPane tabbedPane; //zakladka
-	private JPanel firstTab, secondTab; 
+	private JPanel firstTab; 
 	private JTable employeesTable;
-	private JTextField txtMinCost, txtMaxCost, txtSearchQuery; // pole tekstowe
 	private JLabel reminder;//tekst
-	private int eployeeID = -1, filter = -1, eventID = -1;
-	private JSpinner spinStartDate, spinEndDate, olderThan;
-	private SpinnerDateModel model, model2;
-	private Date startDate, endDate;
-	private String searchQuery;
-	private double minCost = -9999999999999.00, maxCost = 9999999999999.00;
+	private int eployeeID = -1;
 
 	GUI() throws SQLException 
 	{
@@ -59,7 +45,6 @@ public class GUI extends JFrame
 		  reminder.setBounds(180, 0, 600, 20);
 		  reminder.setForeground(Color.RED);
 		  reminder.setHorizontalAlignment(SwingConstants.RIGHT);
-		  add(firstTab);
 		  add(tabbedPane); add(reminder);
 		  
 		
@@ -93,17 +78,18 @@ public class GUI extends JFrame
 		firstTab = new JPanel();
 		firstTab.setLayout(null);
 		setVisible(true);
-	    String[] colName = { "Id", "Nazwisko", "Imie", "Email", "Departament", "Pensja"};
-	    int[] width = { 34, 230, 130, 130, 50, 34 };
+	    String[] colName = { "Id", "Nazwisko", "Imie", "Email", "Oddzial", "Pensja"};
+	    int[] width = { 34, 150, 130, 130, 50, 34 };
 		
-		employeesTable = createTable(colName, width, new ListSelectionListener(){
-	   
-			public void valueChanged(ListSelectionEvent event) 
-			{
-	        	if(employeesTable.getSelectedRow()>=0)
-	        		eployeeID = Integer.parseInt(employeesTable.getValueAt(employeesTable.getSelectedRow(), 0).toString());
-	        }
-	    });
+	    employeesTable = createTable(colName, width, new ListSelectionListener(){
+            
+            public void valueChanged(ListSelectionEvent event) {
+                if(employeesTable.getSelectedRow()>=0)
+                    eployeeID = Integer.parseInt(employeesTable.getValueAt(employeesTable.getSelectedRow(), 0).toString());
+            }
+        });
+	    updateTable(database.getEmployees(), employeesTable);
+	    
 		
 		
 		JScrollPane scrollPane = new JScrollPane(employeesTable);
@@ -117,22 +103,30 @@ public class GUI extends JFrame
 		
 
 		JButton btnDodaj = new JButton("Dodaj");
-		btnDodaj.setBounds(655, 105, 120, 30);
+		btnDodaj.setBounds(655, 10, 120, 30);
 		btnDodaj.addActionListener(new ActionListener() {
 		
 			public void actionPerformed(ActionEvent e) { addPerson(); }
 		});
 		
 		JButton btnUsun = new JButton("Usuń");
-		btnUsun.setBounds(655, 140, 120, 30);
+		btnUsun.setBounds(655, 50, 120, 30);
 		btnUsun.addActionListener(new ActionListener() {
 
-			public void actionPerformed(ActionEvent e) { deleteBicycle(); }
+			public void actionPerformed(ActionEvent e) { deletePerson(); }
 		});
 		
+		JButton btnEdytuj = new JButton("Zmień");
+        btnEdytuj.setBounds(655, 90, 120, 30);
+        btnEdytuj.addActionListener(new ActionListener() {
 
-		  firstTab.add(btnDodaj);
+            public void actionPerformed(ActionEvent e) { editPerson(); }
+        });
+		
+
+		firstTab.add(btnDodaj);
 		firstTab.add(btnUsun);
+		firstTab.add(btnEdytuj);
 	
 	}
 	
@@ -143,24 +137,65 @@ public class GUI extends JFrame
 	    if (result == JOptionPane.OK_OPTION) {
 	    	try {
 		
-		    	database.addPerson(Integer.parseInt(panel.getTxtID()), panel.getTxtNazwisko(), panel.getTxtImie(),panel.getTxtEmail(), panel.getTxtOddial(),Double.parseDouble(panel.getTxtZarobki()));
-				
+		    	database.addPerson(Integer.parseInt(panel.getTxtID()), panel.getTxtNazwisko(), panel.getTxtImie(),panel.getTxtEmail(), panel.getTxtOddial(),Double.parseDouble(panel.getTxtZarobki().replaceAll(" ", ".")));
+		        updateTable(database.getEmployees(), employeesTable);
+
+		    	
 	    	} catch(NumberFormatException e) {
 	    		JOptionPane.showMessageDialog(this,	"Podane dane były błędne, nie dodano rekordu.", "", JOptionPane.ERROR_MESSAGE);
 	    	}
 	    }
 	}
 	
-	public void deleteBicycle() {
+	public void deletePerson() {
 		if(employeesTable.getSelectedRow() != -1){
-		    int result = JOptionPane.showConfirmDialog(null,"Czy na pewno chcesz usunąć ten rkord?", "Usuń rekord", JOptionPane.OK_CANCEL_OPTION);
+		    int result = JOptionPane.showConfirmDialog(null,"Czy na pewno chcesz usunąć ten rekord?", "Usuń rekord", JOptionPane.OK_CANCEL_OPTION);
 		    if (result == JOptionPane.OK_OPTION) {
 				database.deletePerson(eployeeID);
-				
+		        updateTable(database.getEmployees(), employeesTable);
+
 		    }
 		} else {
 			JOptionPane.showMessageDialog(this,	"Nie zaznaczono żadnego rekordu.", "", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	
+	public void editPerson() {
+        if(employeesTable.getSelectedRow() != -1){
+            AddPerson panel = new AddPerson();
+            int result = JOptionPane.showConfirmDialog(null, panel, "Czy na pewno chcesz zmodyfikować ten rekord?", JOptionPane.OK_CANCEL_OPTION);
+            if (result == JOptionPane.OK_OPTION) {
+                database.editPerson(Integer.parseInt(panel.getTxtID()), panel.getTxtNazwisko(), panel.getTxtImie(),panel.getTxtEmail(), panel.getTxtOddial(),Double.parseDouble(panel.getTxtZarobki().replaceAll(" ", ".")));
+                updateTable(database.getEmployees(), employeesTable);
+
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Nie zaznaczono żadnego rekordu.", "", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+	
+	
+	
+	   private void updateTable(Object[][] list, JTable jTable) {
+	        DefaultTableModel contactTableModel = (DefaultTableModel) jTable.getModel();
+	        contactTableModel.setRowCount(0);
+	        
+	        for(Object[] t : list){
+	            contactTableModel.addRow(t);
+	        }
+	    }
+	
+	public static void main(String[] args) {
+        EventQueue.invokeLater(new Runnable() {
+            
+            public void run() {
+                try {
+                    GUI frame = new GUI();
+                    frame.setVisible(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
 }
